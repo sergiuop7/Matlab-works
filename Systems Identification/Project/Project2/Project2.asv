@@ -1,0 +1,222 @@
+clear variables
+clc
+close all
+
+load("iddata-10.mat");
+
+id_u = id.InputData;
+id_y = id.OutputData;
+val_u = val.InputData;
+val_y = val.OutputData;
+
+figure, plot(id_u);
+title("Id u");
+figure, plot(id_y);
+title("Id y");
+
+figure, plot(val_u);
+title("Val u");
+figure, plot(val_y);
+title("Val y");
+
+%{
+na = 2;
+nb = na;
+%nk is always equal to 1 therefore it was ignored
+m = 3;
+%}
+
+x = 0;
+error_pred_id = zeros(1, 12);
+error_pred_val = zeros(1, 12);
+error_sim_id = zeros(1, 12);
+error_sim_val = zeros(1, 12);
+
+
+for m = 1 : 1 : 3 
+    for na = 1 : 1 : 4
+
+x = x + 1;
+
+nb = na;
+
+%% Prediction %%
+
+%%%%% Identification %%%%%
+
+phi_pred_id = arx_funct(m, na, nb, id_u, id_y);
+%{
+if (m == 1)
+    phi_pred_id(:, 1) = [];
+end
+%}
+no_of_columns_of_phi = size(phi_pred_id, 2);
+theta = phi_pred_id \ id_y;
+y_hat_id = phi_pred_id * theta;
+squared_error_pred_id = (y_hat_id - id_y) .^ 2;
+MSE_pred_id = sum(squared_error_pred_id) / length(id_y);
+error_pred_id(x) = MSE_pred_id;
+figure, plot(id_y); hold on;
+plot(y_hat_id); hold off;
+title("Pred id y for m = " + m + " and n = " + na + newline + "MSE = " + MSE_pred_id);
+legend("Identification Actual Data", "Identification Prediction Data");
+
+%%%%% \Identification %%%%%
+
+%%%%% Validation %%%%%
+
+phi_pred_val = arx_funct(m, na, nb, val_u, val_y);
+%{
+if (m == 1)
+    phi_pred_val(:, 1) = [];
+end
+%}
+y_hat_val = phi_pred_val * theta;
+squared_error_pred_val = (y_hat_val - val_y) .^ 2;
+MSE_pred_val = sum(squared_error_pred_val) / length(val_y);
+error_pred_val(x) = MSE_pred_val;
+figure, plot(val_y); hold on;
+plot(y_hat_val); hold off;
+title("Pred val y for m = " + m + " and n = " + na + newline + "MSE = " + MSE_pred_val);
+legend("Validation Actual Data", "Validation Prediction Data");
+
+%%%%% \Validation %%%%%
+
+%% Simulation %%
+
+if(m > 1)
+
+%%%%% Identification %%%%%
+
+phi_sim_id = zeros(length(id_u), no_of_columns_of_phi);
+id_y_sim = zeros(length(id_u), 1);
+for k = 1 : length(id_u)
+    phi_sim_id(k, :) = arx_sim(m, na, nb, id_u, id_y_sim, k);
+    id_y_sim(k) = phi_sim_id(k, :) * theta;
+end
+squared_error_sim_id = (id_y_sim - id_y) .^ 2;
+MSE_sim_id = sum(squared_error_sim_id) / length(id_y);
+error_sim_id(x) = MSE_sim_id;
+figure, plot(id_y, 'b'); hold on
+plot(id_y_sim, 'r'); hold off
+title("Sim id y for m = " + m + " and n = " + na + newline + "MSE = " + MSE_sim_id);
+legend("Identification Actual Data", "Identification Simulation Data");
+
+%%%%% \Identification %%%%%
+
+%%%%% Validation %%%%%
+
+phi_sim_val = zeros(length(val_u), no_of_columns_of_phi);
+val_y_sim = zeros(length(val_u), 1);
+for k = 1 : length(val_u)
+    phi_sim_val(k, :) = arx_sim(m, na, nb, val_u, val_y_sim, k);
+    val_y_sim(k) = phi_sim_val(k, :) * theta;
+end
+squared_error_sim_val = (val_y_sim - val_y) .^ 2;
+MSE_sim_val = sum(squared_error_sim_val) / length(val_y);
+error_sim_val(x) = MSE_sim_val;
+figure, plot(val_y, 'b'); hold on
+plot(val_y_sim, 'r'); hold off
+title("Sim val y for m = " + m + " and n = " + na + newline + "MSE = " + MSE_sim_val);
+legend("Validation Actual Data", "Validation Simulation Data");
+
+%%%%% \Validation %%%%%
+    
+else
+
+%%%%% Identification %%%%% 
+
+phi_sim_id = zeros(length(id_u), no_of_columns_of_phi);
+%calculate the simulation y by using the previous values
+id_y_sim = zeros(length(id_u),1);
+
+for i = 2 : 1 : length(id_u)
+    %for the elements with y
+    for j = 1:1:na
+        if (i > j)
+            phi_sim_id(i,j) = -1 * id_y_sim(i-j);
+        end
+    end
+
+    %for the elements with u
+    for j = (na+1):1:(na+nb)
+        if (i > j-na)
+            phi_sim_id(i,j) = id_u(i-j+na);
+        end
+    end
+%find the simulation data
+id_y_sim(i) = phi_sim_id(i,:) * theta;
+end
+squared_error_sim_id = (id_y_sim - id_y) .^ 2;
+MSE_sim_id = sum(squared_error_sim_id) / length(id_y);
+%error_sim_id(x) = MSE_sim_id;
+figure, plot(id_y, 'b'); hold on 
+plot(id_y_sim, 'r'); hold off
+title("Sim id y for m = " + m + " and n = " + na + newline + "MSE = " + MSE_sim_id);
+legend("Identification Actual Data", "Identification Simulation Data");
+
+%%%%% \Identification %%%%%
+
+%%%%% Validation %%%%%
+
+phi_sim_val = zeros(length(val_u), no_of_columns_of_phi);
+%calculate the simulation y by using the previous values
+val_y_sim = zeros(length(val_u),1);
+
+for i = 2 : 1 : length(val_u)
+    %for the elements with y
+    for j = 1:1:na
+        if (i > j)
+            phi_sim_val(i,j) = -1 * val_y_sim(i-j);
+        end
+    end
+
+    %for the elements with u
+    for j = (na+1):1:(na+nb)
+        if (i > j-na)
+            phi_sim_val(i,j) = val_u(i-j+na);
+        end
+    end
+%find the simulation data
+val_y_sim(i) = phi_sim_val(i,:) * theta;
+end
+squared_error_sim_val = (val_y_sim - val_y) .^ 2;
+MSE_sim_val = sum(squared_error_sim_val) / length(val_y);
+%error_sim_val(x) = MSE_sim_val;
+figure, plot(val_y, 'b'); hold on
+plot(val_y_sim, 'r'); hold off
+title("Sim val y for m = " + m + " and n = " + na + newline + "MSE = " + MSE_sim_val);
+legend("Validation Actual Data", "Validation Simulation Data");
+
+%%%%% \Validation %%%%%
+
+end
+
+    end
+end
+
+%%  Plotting the MSEs as functions of m
+
+figure,
+plot(error_pred_id, '-*')
+title('MSE prediction for identification values')
+ylabel('Error values')
+legend('Every 4 points correspond to one m')
+
+figure,
+plot(error_pred_val, '-*')
+title('MSE prediction for validation values')
+ylabel('Error values')
+legend('Every 4 points correspond to one m')
+
+figure,
+plot(error_sim_id, '-*')
+title('MSE simulation for identification values')
+ylabel('Error values')
+legend('Every 4 points correspond to m=2 and m=3')
+
+figure,
+plot(error_sim_val, '-*')
+title('MSE simulation for validation values')
+ylabel('Error values')
+legend('Every 4 points correspond to m=2 and m=3')
