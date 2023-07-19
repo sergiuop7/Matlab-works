@@ -1,0 +1,28 @@
+clear variables;
+
+[t,der] = ode23('fcttestcolocviu',[0 5],[1;0])
+
+x = der(:,1);
+v = der(:,2);
+figure,
+subplot(2,1,1),plot(t,x,'r');
+subplot(2,1,2),plot(x,v,'g');
+
+
+
+% function out = fcttestcolocviu(t,x)
+% x=in(1);
+% v=in(2);
+% w=1;
+% out=[v;-w^2*x]
+% end
+% clear variables;
+% [t, der] = ode23('functietestcolocviu', [0 5], [1;0]);
+% 
+% x = der(:, 1);
+% v = der(:, 2);
+% 
+% figure,
+% subplot(2,1,1), plot(t, x, 'r');
+% subplot(2,1,2), plot(x,v, 'g');
+

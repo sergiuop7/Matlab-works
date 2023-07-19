@@ -1,0 +1,31 @@
+clear variables;
+syms x;
+
+f = exp(x) + x^2;
+
+int(f, [0 1]);
+I = exp(1)-(2/3)
+
+% (0,1) => a = 0, b = 1
+% 1/(N * distributie) * SUM(f)
+% E = (b-a) * rand(1,N)
+
+N = 1000;
+E = 1 * rand(1, N);
+
+Iapprox = 1/(N * 1) * sum(exp(E) + E.^2)
+
+ERROR = abs(I-Iapprox)/I
+
+
+t = -10:0.1:10;
+x_t = 4*u(t) + 2*(sin(3*t));
+
+plot(t,x_t)
+
+
+
+
+function out = u(t)
+out = 1 * (t>=0);
+end

@@ -1,0 +1,26 @@
+clear variables;
+Q=[0 20 40 60 80 100 120 140 160]
+H=[23 21 20.5 20 18.5 17 15 13 10]
+
+plot(fit(transpose(Q),transpose(H),'poly2'))
+
+
+clear variables;
+
+global H1 a f12 f23 f31 r2 r3;
+
+H1 = 30.48;
+r2 = 0.0425;
+r3 = 0.085;
+
+D = [0.254 0.3048 0.254];
+L = [304.8 304.8 457.2];
+
+Chw = 120;
+
+fk = (10.7 * L) ./ (Chw^1.852 .* D.^4.87);
+f12 = fk(1);
+f23 = fk(2);
+f31 = fk(3);
+a=1;
+H1 = fsolve('hidraulic_ntwk',[0;0])
